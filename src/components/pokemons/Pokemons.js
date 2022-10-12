@@ -28,7 +28,9 @@ const Pokemons = () => {
   }, [dispatch]);
 
   return (
+
     <div className="row">
+
       <div className="col-md-6 ">
         <h2> List of Pokemones </h2>
 
@@ -62,9 +64,11 @@ const Pokemons = () => {
 
         <ul className="list-group mt-3">
           {pokemon.map((item) => (
-            <li className=" list-group-item text-uppercase " key={item.name}>
+            <li className=" list-group-item text-uppercase " 
+            key={item.name}
+            onClick={() => dispatch(DetallePokemon(item.url))}
+            >
               {item.name}
-
               <button
                 onClick={() => dispatch(DetallePokemon(item.url))}
                 type="button"
