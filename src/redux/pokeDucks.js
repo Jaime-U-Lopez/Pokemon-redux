@@ -2,79 +2,177 @@ import axios from "axios";
 
 //constantes  almacenan la informacion
 
-const dataInitial ={
-
-  array:[],
-  offset:0
-}
+const dataInitial = {
+  count: 0,
+  next: null,
+  previous: null,
+  results: [],
+  unPokemon:[]
+};
 //tipes  son como variables de entorno
 
-const GET_POKEMON_SUCCESS=  'GET:POKEMONES_SUCCESS'
-const GET_POKEMON_SUCCESS_NEW=  'GET_POKEMON_SUCCESS_NEW'
+const GET_POKEMON_SUCCESS = "GET:POKEMONES_SUCCESS";
+const GET_POKEMON_SUCCESS_NEW = "GET_POKEMON_SUCCESS_NEW";
+const GET_POKEMON_SUCCESS_ṔROVIDER = "GET_POKEMON_SUCCESS_ṔROVIDER";
+const POKE_INFO_SUCCESS = "POKE_INFO_SUCCESS";
 
-//reducer  
+//reducer
 
-export default function pokeReducer( state = dataInitial, action ) {
-
+export default function pokeReducer(state = dataInitial, action) {
   switch (action.type) {
     case GET_POKEMON_SUCCESS:
-
-      return{  ...state,array: action.payload}
+      return { ...state, ...action.payload };
     case GET_POKEMON_SUCCESS_NEW:
-      return{...state,array:action.payload.array, offset:action.payload.offset}
-
-  
-    default:
-        return state;
-        
+      return { ...state, ...action.payload };
+    case GET_POKEMON_SUCCESS_ṔROVIDER:
+      return { ...state, ...action.payload };
+      case POKE_INFO_SUCCESS :
+        return { ...state, unPokemon:action.payload };
+     
+   
+      default:
+      return state;
   }
-  
 }
-
 
 //acciones
 
-export const getPokemonsAction=()=> async (dispatch, getState) => {
-
-  try {
-    const res=await axios.get('https://pokeapi.co/api/v2/pokemon?offset=0&limit=10')
+export const getPokemonsAction = () => async (dispatch, getState) => {
+  if (localStorage.getItem("offset=0")) {
+    console.log("datos guardardos");
     dispatch({
-
-      type:GET_POKEMON_SUCCESS,
-      payload:res.data.results
-    })
-
-    console.log("Hola")
-  } catch (error) {
-          console.log(error)
+      type: GET_POKEMON_SUCCESS,
+      payload: JSON.parse(localStorage.getItem("offset=0")),
+    });
+    return;
   }
-}
-
-
-export const getPokemAction2=(numero)=> async (dispatch, getState) => {
-
-
-  const {offset}= getState().pokemones
-  const siguiente= offset+numero
 
   try {
+    const res = await axios.get(
+      "https://pokeapi.co/api/v2/pokemon/?offset=0&limit=10"
+    );
+    dispatch({
+      type: GET_POKEMON_SUCCESS,
+      payload: res.data,
+    });
 
-    const res=await axios.get(`https://pokeapi.co/api/v2/pokemon?offset=${siguiente}&limit=10`)
+    console.log("datos solicitados a la api ");
+
+    localStorage.setItem("offset=0", JSON.stringify(res.data));
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+export const nextGetPokemAction = (a) => async (dispatch, getState) => {
+  
+  console.log(a)
+  const { next } = getState().pokemones;
+  const { results } = getState().pokemones;
+
+  try {
+    if (results.length === 0) {
+      console.log("no hay valores para mostrar");
+      return;
+    }
+    if (localStorage.getItem(next)) {
+      console.log("datos guardardos next");
+      dispatch({
+        type: GET_POKEMON_SUCCESS_NEW,
+        payload: JSON.parse(localStorage.getItem(next)),
+      });
+      return;
+    }
+
+    const res = await axios.get(next);
+
+    dispatch({
+      type: GET_POKEMON_SUCCESS_NEW,
+      payload: res.data,
+    });
+    localStorage.setItem(next, JSON.stringify(res.data));
+
+    console.log("Hola cambiando las secciones");
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+export const providerPokemon = () => async (dispatch, getState) => {
+  const { next } = getState().pokemones;
+
+  const { previous } = getState().pokemones;
+
+  try {
+    if (next === null || previous === null) {
+      console.log("no hay valores para mostrar");
+      return;
+    }
+
+    if (localStorage.getItem(previous)) {
+      dispatch({
+        type: GET_POKEMON_SUCCESS_ṔROVIDER,
+        payload: JSON.parse(localStorage.getItem(previous)),
+
+      });
+    console.log("devolviendomente desde LocalStorage ");
+      return
+    }
+
+    const res = await axios.get(previous);
+    dispatch({
+      type: GET_POKEMON_SUCCESS_ṔROVIDER,
+      payload: res.data,
+    });
+
+    localStorage.setItem(previous, JSON.stringify(res.data));
+    console.log("devolviendomente al menu anterior");
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+
+export const DetallePokemon =(url="https://pokeapi.co/api/v2/pokemon/1/")=> async (dispatch, getState)=>{
+
+  try{
+    if (localStorage.getItem(url)) {
+      dispatch({
+        type: POKE_INFO_SUCCESS,
+        payload: 
+        JSON.parse(localStorage.getItem(url)),
+
+      });
+    console.log("devolviendomente desde LocalStorage ");
+      return
+    }
+
+    const res = await axios.get(url)
+
+    console.log(res.data)
     dispatch({
 
-      type:GET_POKEMON_SUCCESS_NEW,
-      payload:{
-        
-        array:res.data.results,
-        offset:siguiente
-
-      
+      type: POKE_INFO_SUCCESS,
+      payload:
+      {
+        nombre:res.data.name,
+        ancho:res.data.weight,
+        alto:res.data.height,
+        foto:res.data.sprites.other.dream_world.front_default
       }
     })
 
-    console.log("Hola cambiando las secciones")
-  } catch (error) {
-          console.log(error)
-  }
+    localStorage.setItem(url, JSON.stringify({
+      nombre:res.data.name,
+      ancho:res.data.weight,
+      alto:res.data.height,
+      foto:res.data.sprites.other.dream_world.front_default
+
+    }))
+  }catch (error) {
+    console.log(error)
+ }
+
 }
+
 
